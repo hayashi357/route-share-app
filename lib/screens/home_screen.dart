@@ -2,12 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
+import 'map_screen.dart';
+import 'photo_upload_screen.dart';
+import 'route_recording_screen.dart';
+import 'route_history_screen.dart';
+import 'profile_screen.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  int _selectedIndex = 0;
+
+  late final List<Widget> _screens = [
+    const MapScreen(),
+    const RouteHistoryScreen(),
+    const ProfileScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -26,49 +44,58 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Center(
-        child: currentUser.when(
-          data: (user) => Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (user?.photoUrl != null)
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: NetworkImage(user!.photoUrl!),
-                )
-              else
-                const CircleAvatar(
-                  radius: 50,
-                  child: Icon(Icons.person, size: 50),
+      body: _screens[_selectedIndex],
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'route',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const RouteRecordingScreen(),
                 ),
-              const SizedBox(height: 16),
-              Text(
-                'ようこそ、${user?.displayName}さん',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                user?.email ?? '',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 32),
-              const Text('このアプリは現在開発中です。'),
-              const SizedBox(height: 16),
-              const Text('以下の機能が実装予定です：'),
-              const SizedBox(height: 8),
-              const Column(
-                children: [
-                  Text('📍 地図表示'),
-                  Text('📷 写真投稿'),
-                  Text('🚴 ルート記録'),
-                  Text('🔗 ルート共有'),
-                ],
-              ),
-            ],
+              );
+            },
+            tooltip: 'ルート記録',
+            child: const Icon(Icons.route),
           ),
-          loading: () => const CircularProgressIndicator(),
-          error: (err, stack) => Text('エラー: $err'),
-        ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            heroTag: 'photo',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PhotoUploadScreen(),
+                ),
+              );
+            },
+            tooltip: '写真投稿',
+            child: const Icon(Icons.photo_camera),
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() => _selectedIndex = index);
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: '地図',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'ルート履歴',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'プロフィール',
+          ),
+        ],
       ),
     );
   }
